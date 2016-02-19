@@ -21,35 +21,37 @@ from datetime import datetime
 from plugins.plugin import Plugin
 
 
+def get_dict_data(dictionary, req_key):
+    req_key = req_key.lower()
+    for key in dictionary:
+        if key.lower() == req_key:
+            return dictionary[key]
+    
+
 class CookieJar(Plugin):
     name       = "CookieJar"
     optname    = "cookiejar"
     desc       = "Extract cookie from requests"
     version    = "0.1"
     
-    @staticmethod
-    def get_dict_data(dictionary, req_key):
-        req_key = req_key.lower()
-        for key in dictionary:
-            if key.lower() == req_key:
-                return dictionary[key]
-    
     def directlogger(self, request):
-        cookie = self.get_dict_data(request.headers, 'Cookie')
+        cookie = get_dict_data(request.headers, 'Cookie')
         if cookie is not None:
             self.clientlog.info(cookie, extra=request.clientInfo)
         
     def filelogger(self, request):
-        cookie = self.get_dict_data(request.headers, 'Cookie')
+        cookie = get_dict_data(request.headers, 'Cookie')
         if cookie is not None:
-            host = self.get_dict_data(request.headers, 'Host')
+            host = get_dict_data(request.headers, 'Host')
             time = datetime.now().strftime('%z %Y-%m-%d %H:%M:%S')
 
             self.clientlog.info(cookie, extra=request.clientInfo)
-            cookie = cookie.replace('; ','\n')
-            self.logfile.write("{time} [{from_}->{to}]\n['User-Agent':{clientinfo}]\n{cookie}\n\n".format(
-                time=time, from_=request.clientInfo['clientip'], to=host, cookie=cookie,
-                clientinfo=self.get_dict_data(request.headers, 'User-Agent')))
+            self.logfile.write("{time} [{from_}->{to}]\n \
+                    ['User-Agent':{clientinfo}]\n \
+                    Cookie: {cookie}\n\n".format(
+                time=time, from_=request.clientInfo['clientip'], 
+                to=host, cookie=cookie,
+                clientinfo=get_dict_data(request.headers, 'User-Agent')))
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
